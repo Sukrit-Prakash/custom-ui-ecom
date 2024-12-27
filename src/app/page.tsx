@@ -1,4 +1,4 @@
-// import { Icons } from '@/components/Icons'
+import { Icons } from '@/components/Icons'
 import MaxWidthWrapper from '@/components/MaxWidthWrapper'
 import Phone from '@/components/Phone'
 import { Check } from 'lucide-react'
@@ -122,7 +122,7 @@ export default function Home() {
               What our{' '}
               <span className='relative px-2'>
                 customers{' '}
-                {/* <Icons.underline className='hidden sm:block pointer-events-none absolute inset-x-0 -bottom-6 text-green-500' /> */}
+                <Icons.underline className='hidden sm:block pointer-events-none absolute inset-x-0 -bottom-6 text-green-500' />
               </span>{' '}
               say
             </h2>

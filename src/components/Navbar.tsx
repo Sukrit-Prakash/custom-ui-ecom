@@ -45,7 +45,7 @@ const Navbar = async() => {
                   </Link>
                 )}
                 <Link
-                  href="/api/configure/upload"
+                  href="/configure/upload"
                   className={buttonVariants({
                     size: "sm",
                     className: "hidden sm:flex items-center gap-1",
