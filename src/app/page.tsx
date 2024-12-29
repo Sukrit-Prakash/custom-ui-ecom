@@ -1,19 +1,25 @@
+import DropzoneUploader from '@/components/Dropzone/uploader'
 import { Icons } from '@/components/Icons'
 import MaxWidthWrapper from '@/components/MaxWidthWrapper'
 import Phone from '@/components/Phone'
 import { Check } from 'lucide-react'
 // import Card from '../components/Exclusivecard'
-
-
+// import Page from './configure/upload/page'
+// 
 // import { Reviews } from '@/components/Reviews'
 // import { buttonVariants } from '@/components/ui/button'
 // import { ArrowRight, Check, Star } from 'lucide-react'
 // import Link from 'next/link'
 
+
 export default function Home() {
+ 
+  const loggedInCustomerId = 123
+
   return (
     <div className='bg-slate-50 grainy-light'>
-      
+      <DropzoneUploader customerId={loggedInCustomerId}/>
+      {/* <Page/> */}
       <section>
         <MaxWidthWrapper className='pb-24 pt-10 lg:grid lg:grid-cols-3 sm:pb-32 lg:gap-x-0 xl:gap-x-8 lg:pt-24 xl:pt-32 lg:pb-52'>
           <div className='col-span-2 px-6 lg:px-0 lg:pt-4'>
@@ -206,9 +212,10 @@ export default function Home() {
 
         <div className='pt-16'>
           {/* <Reviews /> */}
+          
         </div>
       </section>
-
+      
       <section>
         <MaxWidthWrapper className='py-24'>
           <div className='mb-12 px-6 lg:px-8'>
@@ -217,12 +224,13 @@ export default function Home() {
                 Upload your photo and get{' '}
                 <span className='relative px-2 bg-green-600 text-white'>
                   your own case
+                  
                 </span>{' '}
                 now
               </h2>
             </div>
           </div>
-
+          
           <div className='mx-auto max-w-6xl px-6 lg:px-8'>
             <div className='relative flex flex-col items-center md:grid grid-cols-2 gap-40'>
               <img
