@@ -4,9 +4,11 @@ import { useDropzone } from "react-dropzone";
 import axios from "axios";
 import Cropper from "react-easy-crop";
 import { Area } from "react-easy-crop/types";
+import Phone from "@/components/Phone";
 
 type UploadStatus = "idle" | "uploading" | "success" | "error";
 
+// -- Helpers --
 async function createImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -16,10 +18,11 @@ async function createImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
-async function getCroppedImg(
+// For final upload: returns a File
+async function getCroppedImgFile(
   imageSrc: string,
   pixelCrop: Area
-): Promise<{ file: File }> {
+): Promise<File> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
@@ -27,7 +30,6 @@ async function getCroppedImg(
 
   canvas.width = pixelCrop.width;
   canvas.height = pixelCrop.height;
-
   ctx.drawImage(
     image,
     pixelCrop.x,
@@ -44,51 +46,102 @@ async function getCroppedImg(
     canvas.toBlob((blob) => {
       if (!blob) return reject(new Error("Canvas is empty"));
       const file = new File([blob], "cropped-image.jpg", { type: blob.type });
-      resolve({ file });
+      resolve(file);
     }, "image/jpeg");
   });
 }
 
-function DropzoneUploader({ customerId }: { customerId: number }) {
+// For live preview: returns a base64 string
+async function getCroppedImgUrl(
+  imageSrc: string,
+  pixelCrop: Area
+): Promise<string> {
+  const image = await createImage(imageSrc);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Failed to get 2D context");
+
+  canvas.width = pixelCrop.width;
+  canvas.height = pixelCrop.height;
+  ctx.drawImage(
+    image,
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+    0,
+    0,
+    pixelCrop.width,
+    pixelCrop.height
+  );
+
+  return canvas.toDataURL("image/jpeg");
+}
+
+// -- Component --
+export default function DropzoneUploader({ customerId }: { customerId: number }) {
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
   const [uploadProgress, setUploadProgress] = useState<number>(0);
 
-  // State for cropping
+  // For Cropper
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
-  // Store the original File (from drop) so we can show the Cropper
+  // For the live cropped preview
+  const [croppedPreview, setCroppedPreview] = useState<string | null>(null);
+
+  // Store original file from drop
   const [droppedFile, setDroppedFile] = useState<File | null>(null);
 
-  // 1. When the user drops a file, we just store it and create base64 for cropping
+  // -- Drop Handlers --
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
     const file = acceptedFiles[0];
     setDroppedFile(file);
 
-    // Convert to base64 so Cropper can display
     const reader = new FileReader();
     reader.onload = () => setImageSrc(reader.result as string);
     reader.readAsDataURL(file);
   }, []);
 
-  // 2. Cropper callback to set the final area
-  const onCropCompleteCb = useCallback((_: Area, croppedPixels: Area) => {
-    setCroppedAreaPixels(croppedPixels);
-  }, []);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setDroppedFile(file);
 
-  // 3. When user hits “Crop & Upload”
+    const reader = new FileReader();
+    reader.onload = () => setImageSrc(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  // -- Cropping Callback --
+  const onCropCompleteCb = useCallback(
+    async (_: Area, croppedPixels: Area) => {
+      setCroppedAreaPixels(croppedPixels);
+
+      // Generate a quick preview whenever cropping stops
+      try {
+        if (imageSrc) {
+          const previewUrl = await getCroppedImgUrl(imageSrc, croppedPixels);
+          setCroppedPreview(previewUrl);
+        }
+      } catch (err) {
+        console.error("Preview error:", err);
+      }
+    },
+    [imageSrc]
+  );
+
+  // -- Upload Handler --
   const handleCropAndUpload = async () => {
     if (!imageSrc || !croppedAreaPixels) return;
     setUploadStatus("uploading");
 
     try {
-      // A) Get the cropped File via canvas
-      const { file } = await getCroppedImg(imageSrc, croppedAreaPixels);
+      const file = await getCroppedImgFile(imageSrc, croppedAreaPixels);
 
-      // B) Prepare FormData and upload
       const formData = new FormData();
       formData.append("file", file);
       formData.append("customerId", String(customerId));
@@ -106,9 +159,10 @@ function DropzoneUploader({ customerId }: { customerId: number }) {
       });
 
       setUploadStatus("success");
-      // Reset states if you want
+      // Reset states
       setDroppedFile(null);
       setImageSrc(null);
+      setCroppedPreview(null);
       setCrop({ x: 0, y: 0 });
       setZoom(1);
       setCroppedAreaPixels(null);
@@ -118,71 +172,76 @@ function DropzoneUploader({ customerId }: { customerId: number }) {
     }
   };
 
-  // If the user picks a file using the “Browse” input (instead of dropzone)
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setDroppedFile(file);
-
-    const reader = new FileReader();
-    reader.onload = () => setImageSrc(reader.result as string);
-    reader.readAsDataURL(file);
-  };
-
-  // 4. Basic Dropzone config
+  // -- Dropzone Config --
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { "image/*": [] },
     multiple: false,
   });
 
-  // 5. Render logic
+  // -- UI Helpers --
   const renderStatus = () => {
     switch (uploadStatus) {
       case "idle":
-        return <p>Drop a file or click to select.</p>;
+        return <p className="text-sm text-gray-600">Drop a file or click to select.</p>;
       case "uploading":
-        return <p>Uploading... {uploadProgress}%</p>;
+        return (
+          <p className="text-sm text-blue-600">
+            Uploading... {uploadProgress}%
+          </p>
+        );
       case "success":
-        return <p style={{ color: "green" }}>Upload complete!</p>;
+        return (
+          <p className="text-sm text-green-600">Upload complete!</p>
+        );
       case "error":
-        return <p style={{ color: "red" }}>Error uploading file.</p>;
+        return (
+          <p className="text-sm text-red-600">Error uploading file.</p>
+        );
       default:
         return null;
     }
   };
 
   return (
-    <div>
+    <div className="mx-auto max-w-lg p-4">
       {/* Dropzone area */}
       <div
         {...getRootProps()}
-        style={{
-          border: "2px dashed #ccc",
-          borderRadius: "8px",
-          padding: "20px",
-          textAlign: "center",
-          cursor: "pointer",
-          marginBottom: "1rem",
-        }}
+        className={`flex flex-col items-center justify-center rounded-md border-2 border-dashed border-gray-300 p-6 text-center transition-colors 
+          ${
+            isDragActive
+              ? "bg-green-50 border-green-400 text-green-600"
+              : "hover:bg-gray-50"
+          } mb-4`}
       >
         <input {...getInputProps()} />
-        {isDragActive ? <p>Drop the file here...</p> : renderStatus()}
+        {renderStatus()}
       </div>
 
-      {/* Fallback file input if user wants to click a browse button */}
+      {/* Fallback file input */}
       {!droppedFile && (
-        <input type="file" accept="image/*" onChange={handleFileChange} />
+        <div className="mb-4 flex items-center justify-center">
+          <label className="flex flex-col items-center px-4 py-2 bg-white text-blue-700 rounded-md shadow-lg tracking-wide border border-blue-700 cursor-pointer hover:bg-blue-50 transition">
+            <span className="text-base leading-normal">Browse File</span>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </label>
+        </div>
       )}
 
-      {/* If we have an image, show the Cropper */}
+      {/* Cropper */}
       {imageSrc && (
-        <div style={{ position: "relative", width: 300, height: 300, margin: "1rem 0" }}>
+        <div className="relative w-72 h-72 mx-auto mb-4">
           <Cropper
             image={imageSrc}
             crop={crop}
             zoom={zoom}
-            aspect={1} // or any ratio you want
+            aspect={1}
             onCropChange={setCrop}
             onCropComplete={onCropCompleteCb}
             onZoomChange={setZoom}
@@ -190,10 +249,10 @@ function DropzoneUploader({ customerId }: { customerId: number }) {
         </div>
       )}
 
-      {/* Zoom control (optional) */}
+      {/* Zoom control */}
       {imageSrc && (
-        <div style={{ marginBottom: "1rem" }}>
-          <label>Zoom:</label>
+        <div className="mb-4 flex flex-col items-center">
+          <label className="text-sm text-gray-700 mb-1">Zoom</label>
           <input
             type="range"
             min={1}
@@ -201,18 +260,33 @@ function DropzoneUploader({ customerId }: { customerId: number }) {
             step={0.1}
             value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}
+            className="w-2/3 cursor-pointer"
           />
         </div>
       )}
 
-      {/* Only show “Crop & Upload” if we have an image to crop */}
+      {/* Crop & Upload button */}
       {imageSrc && (
-        <button onClick={handleCropAndUpload} disabled={uploadStatus === "uploading"}>
-          Crop & Upload
-        </button>
+        <div className="flex justify-center">
+          <button
+            onClick={handleCropAndUpload}
+            disabled={uploadStatus === "uploading"}
+            className="px-4 py-2 bg-green-600 text-white rounded-md shadow hover:bg-green-500 transition disabled:opacity-50"
+          >
+            Crop &amp; Upload
+          </button>
+        </div>
+      )}
+
+      {/* LIVE PREVIEW in <Phone> */}
+      {croppedPreview && (
+        <div className="mt-8 flex flex-col items-center gap-4">
+          <h3 className="text-lg font-semibold text-gray-900">
+            Live Cropped Preview
+          </h3>
+          <Phone className="w-60" imgSrc={croppedPreview} />
+        </div>
       )}
     </div>
   );
 }
-
-export default DropzoneUploader;
