@@ -67,6 +67,16 @@ const { filepath } = uploadedFile
 //  const customerId = 420
 const [customerIdString] = fields.customerId as string[]
 const customerId = parseInt(customerIdString, 10)
+// mostly the error was coming as we did not create cutomer before creating the file record
+// await prisma.customer.create({
+//   data: {
+//     email: 'some@example2.com',
+//     name: 'SomeXName',
+//     // If your model is `id Int @id @default(autoincrement())`, 
+//     // Prisma will assign an ID automatically (1,2,3...) 
+//     // so it might not be exactly 123.
+//   },
+// })
 
 // const customerId = parseInt(fields.customerId as string, 10)
   const filerecord =await prisma.file.create({

@@ -5,20 +5,29 @@ import Phone from '@/components/Phone'
 import { Check } from 'lucide-react'
 // import Card from '../components/Exclusivecard'
 // import Page from './configure/upload/page'
-// 
+
 // import { Reviews } from '@/components/Reviews'
 // import { buttonVariants } from '@/components/ui/button'
 // import { ArrowRight, Check, Star } from 'lucide-react'
 // import Link from 'next/link'
+import {getKindeServerSession} from "@kinde-oss/kinde-auth-nextjs/server";
+import Cropmodel from '@/components/Cropmodel/cropmodel'
+export default async function Home () {
+  const{getUser}=getKindeServerSession();
+    const user = await getUser()
+  // If not logged in (user is null), handle gracefully
+  if (!user) {
+    return <div>Please log in.</div>;
+  }
 
-
-export default function Home() {
- 
-  const loggedInCustomerId = 123
-
+  // Otherwise, user is guaranteed to be non-null
+  // const loggedInCustomerId = Number(user.id);
+  const loggedInCustomerId=124;
   return (
     <div className='bg-slate-50 grainy-light'>
-      <DropzoneUploader customerId={loggedInCustomerId}/>
+      {/* <DropzoneUploader customerId={loggedInCustomerId}/ */}
+      <DropzoneUploader customerId={loggedInCustomerId} />
+      
       {/* <Page/> */}
       <section>
         <MaxWidthWrapper className='pb-24 pt-10 lg:grid lg:grid-cols-3 sm:pb-32 lg:gap-x-0 xl:gap-x-8 lg:pt-24 xl:pt-32 lg:pb-52'>
@@ -57,7 +66,7 @@ export default function Home() {
                   </li>
                 </div>
               </ul>
-              {/* <Card/> */}
+              
               <div className='mt-12 flex flex-col sm:flex-row items-center sm:items-start gap-5'>
                 <div className='flex -space-x-4'>
                   <img
@@ -103,7 +112,7 @@ export default function Home() {
               </div>
             </div>
           {/* </div> */}
-
+            {/* <Card/> */}
           <div className='col-span-full lg:col-span-1 w-full flex justify-center px-8 sm:px-16 md:px-0 mt-32 lg:mx-0 lg:mt-20 h-fit'>
             <div className='relative md:max-w-xl'>
               <img
@@ -268,6 +277,7 @@ export default function Home() {
             </li>
 
             <div className='flex justify-center'>
+            <Cropmodel/>
               {/* <Link
                 className={buttonVariants({
                   size: 'lg',
@@ -280,6 +290,7 @@ export default function Home() {
           </ul>
           {/* <Phone c/> */}
         </MaxWidthWrapper>
+        
       </section>
     </div>
   )

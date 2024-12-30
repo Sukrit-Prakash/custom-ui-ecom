@@ -9,7 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
     "@kinde-oss/kinde-auth-nextjs": "^2.4.6",
+    "@mui/material": "^6.3.0",
     "@prisma/client": "^6.1.0",
     "@radix-ui/react-slot": "^1.1.1",
     "@radix-ui/react-toast": "^1.2.4",
@@ -22,6 +25,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-dropzone": "^14.3.5",
+    "react-easy-crop": "^5.2.0",
     "shadcn-ui": "^0.9.4",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
@@ -34,6 +38,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/react-easy-crop": "^2.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.1.2",
     "postcss": "^8",

@@ -1,0 +1,25 @@
+.app {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+  }
+  
+  .cropContainer {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    background: #333;
+  }
+  
+  .controls {
+    margin-top: 20px;
+    width: 50%;
+  }
+  
+  .slider {
+    width: 100%;
+    position: relative;
+  }
+  
