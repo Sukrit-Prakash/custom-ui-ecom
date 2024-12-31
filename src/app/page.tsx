@@ -12,6 +12,7 @@ import { Check } from 'lucide-react'
 // import Link from 'next/link'
 import {getKindeServerSession} from "@kinde-oss/kinde-auth-nextjs/server";
 import Cropmodel from '@/components/Cropmodel/cropmodel'
+// import Scene from '@/components/sample'
 export default async function Home () {
   const{getUser}=getKindeServerSession();
     const user = await getUser()
@@ -277,7 +278,8 @@ export default async function Home () {
             </li>
 
             <div className='flex justify-center'>
-            <Cropmodel/>
+            {/* <Cropmodel/> */}
+            {/* <Scene/> */}
               {/* <Link
                 className={buttonVariants({
                   size: 'lg',
