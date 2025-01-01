@@ -7,17 +7,171 @@ generator client {
   provider = "prisma-client-js"
 }
 
+//--------------------
+//   CUSTOMER
+//---------------------
 model Customer {
-  id        Int    @id @default(autoincrement())
-  email     String @unique
-  name      String
-  files     File[]
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  name          String
+  createdAt     DateTime  @default(now())
+  //updatedAt     DateTime  @updatedAt
+
+  // 1:N with File (optional user uploads)
+  files         File[]
+
+  // 1:N with Address
+  addresses     Address[]
+
+  // 1:N with Order
+  orders        Order[]
+
+  // 1:1 with Cart
+  cart          Cart?
 }
 
+//--------------------
+//   FILE
+//--------------------
 model File {
   id         Int      @id @default(autoincrement())
   filePath   String
   createdAt  DateTime @default(now())
+
+  // Many-to-1 with Customer
   customer   Customer @relation(fields: [customerId], references: [id])
   customerId Int
+}
+
+//--------------------
+//   ADDRESS
+//--------------------
+model Address {
+  id        Int       @id @default(autoincrement())
+  street    String
+  city      String
+  state     String
+  zip       String
+
+  // (1) Many-to-1 with Customer
+  customer  Customer  @relation(fields: [customerId], references: [id])
+  customerId Int
+
+  // (2) 1:N with Order as shippingAddress
+  // Using relation name "ShippingAddress" to match
+  // the field on the Order model below.
+  orders    Order[]   @relation("ShippingAddress")
+}
+
+//--------------------
+//   PRODUCT
+//--------------------
+model Product {
+  id          Int             @id @default(autoincrement())
+  name        String
+  description String
+  price       Decimal         @default(0.0)
+  createdAt   DateTime        @default(now())
+
+  // 1:N with ProductImage
+  images      ProductImage[]
+
+  // M:N with Category
+  categories  Category[]      @relation("ProductToCategory")
+
+  // 1:N with OrderItem
+  orderItems  OrderItem[]
+
+  cartItems   CartItem[]
+}
+
+//--------------------
+//   PRODUCT IMAGE
+//--------------------
+model ProductImage {
+  id         Int      @id @default(autoincrement())
+  url        String
+
+  product    Product  @relation(fields: [productId], references: [id])
+  productId  Int
+}
+
+//--------------------
+//   CATEGORY
+//--------------------
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String
+
+  // M:N with Product
+  products Product[] @relation("ProductToCategory")
+}
+
+//--------------------
+//   CART
+//--------------------
+model Cart {
+  id           Int        @id @default(autoincrement())
+  // 1:1 with Customer
+  customer     Customer   @relation(fields: [customerId], references: [id])
+  //customerId   Int
+  customerId   Int       @unique
+
+  // 1:N with CartItem
+  items        CartItem[]
+}
+
+//--------------------
+//   CART ITEM
+//--------------------
+model CartItem {
+  id         Int      @id @default(autoincrement())
+  quantity   Int      @default(1)
+
+  // Many-to-1 with Product
+  product    Product  @relation(fields: [productId], references: [id])
+  productId  Int
+
+  // Many-to-1 with Cart
+  cart       Cart     @relation(fields: [cartId], references: [id])
+  cartId     Int
+}
+
+//--------------------
+//   ORDER
+//--------------------
+model Order {
+  id                Int       @id @default(autoincrement())
+  createdAt         DateTime  @default(now())
+  status            String    @default("pending")
+  total             Decimal   @default(0.0)
+
+  // Many-to-1 with Customer
+  customer          Customer  @relation(fields: [customerId], references: [id])
+  customerId        Int
+
+  // 1:N with OrderItem
+  items             OrderItem[]
+
+  // Optional shipping address
+  shippingAddressId Int?
+  // Use the same relation name "ShippingAddress" that Address uses
+  shippingAddress   Address?  @relation(fields: [shippingAddressId], references: [id], name: "ShippingAddress")
+}
+
+//--------------------
+//   ORDER ITEM
+//--------------------
+model OrderItem {
+  id         Int      @id @default(autoincrement())
+  quantity   Int      @default(1)
+  price      Decimal  @default(0.0)
+
+  // Many-to-1 with Product
+  product    Product  @relation(fields: [productId], references: [id])
+  productId  Int
+
+  // Many-to-1 with Order
+  order      Order    @relation(fields: [orderId], references: [id])
+  orderId    Int
 }
