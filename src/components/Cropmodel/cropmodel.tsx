@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useCallback } from 'react'
 import Cropper from 'react-easy-crop'
 import { Area } from 'react-easy-crop/types'
 
